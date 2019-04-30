@@ -44,28 +44,6 @@ for pretty_melody in pretty_values:
     pretty_values_per_length[pretty_melody] = float(pretty_values[pretty_melody]) / float(len(pretty_melody))
 sorted_pretty_values_per_length = sorted(pretty_values_per_length.items(), key=lambda x: x[1], reverse=True)
 
-# best overlaps between end of a pretty string and start of another
-best_pretty_overlap = dict()
-for pretty_melody in t:
-    best_pretty_overlap[pretty_melody] = None
-    done = False
-    for j in range(len(pretty_melody)):
-        curr_pretty_string = pretty_melody[j:]
-        best_value = None
-
-        for other_pretty_melody in t:
-            if other_pretty_melody != pretty_melody and other_pretty_melody.startswith(curr_pretty_string):
-                if best_value is None or best_value < pretty_values[other_pretty_melody]:
-                    best_value = pretty_values[other_pretty_melody]
-                    best_pretty_overlap[pretty_melody] = {'other_melody': other_pretty_melody, 'overlap': len(pretty_melody) - j}
-                    done = True
-                    break
-
-        if done:
-            break
-
-# print(best_pretty_overlap)
-
 
 def get_mismatch_pieces(string, pretty_string):
     mismatch_indices = list()
@@ -145,7 +123,7 @@ def convert_to_pretty(start_idx, curr_idx, string, pretty_string):
     return cost, ops
 
 
-def get_operations(start_idx, orig_str, curr_idx, remaining_cost, n, next_suggestion, best_pretty_overlap):
+def get_operations(start_idx, orig_str, curr_idx, remaining_cost, n):
     """
     Returns:
         list: Current list of operations
@@ -159,88 +137,27 @@ def get_operations(start_idx, orig_str, curr_idx, remaining_cost, n, next_sugges
     new_str = orig_str
     best_value = None
 
-    # if n != 20000:
-    #     for pretty_melody, pretty_value_per_length in sorted_pretty_values_per_length:
-    #         curr_pretty_value = pretty_values[pretty_melody]
-    #         if curr_pretty_value > 0:
-    #             curr_cost, curr_ops = convert_to_pretty(start_idx, curr_idx, orig_str[curr_idx: curr_idx + len(pretty_melody)],
-    #                                                     pretty_melody)
-    #             curr_value = curr_pretty_value - (5 * curr_cost)
-    #
-    #             if curr_cost >= 0 and curr_cost <= remaining_cost:
-    #                 if best_value is None or best_value < curr_value:
-    #                     best_value = curr_value
-    #                     cost = curr_cost
-    #                     ops = curr_ops
-    #                     next_idx = curr_idx + len(pretty_melody)
-    #                     # new_str = ''.join([orig_str[:curr_idx], pretty_melody, orig_str[curr_idx + len(pretty_melody):]])
-    #                     break
-    # else:
-    #     for pretty_melody in pretty_values:
-    #         curr_pretty_value = pretty_values[pretty_melody]
-    #         if curr_pretty_value > 0:
-    #             curr_cost, curr_ops = convert_to_pretty(start_idx, curr_idx, orig_str[curr_idx: curr_idx + len(pretty_melody)], pretty_melody)
-    #
-    #             if curr_cost >= 0 and curr_cost <= remaining_cost:
-    #                 curr_value = curr_pretty_value - (5 * curr_cost)
-    #                 # curr_value = float(curr_pretty_value) / float(1 + curr_cost)
-    #                 if best_value is None or best_value < curr_value:
-    #                     best_value = curr_value
-    #                     cost = curr_cost
-    #                     ops = curr_ops
-    #                     next_idx = curr_idx + len(pretty_melody)
-    #                     # new_str = ''.join([orig_str[:curr_idx], pretty_melody, orig_str[curr_idx + len(pretty_melody):]])
-
-    if next_suggestion is None:
-        for pretty_melody in pretty_values:
+    if n != 20000:
+        for pretty_melody, pretty_value_per_length in sorted_pretty_values_per_length:
             curr_pretty_value = pretty_values[pretty_melody]
             if curr_pretty_value > 0:
-                curr_cost, curr_ops = convert_to_pretty(start_idx, curr_idx,
-                                                        orig_str[curr_idx: curr_idx + len(pretty_melody)], pretty_melody)
-
-                if curr_cost >= 0 and curr_cost <= remaining_cost:
-                    curr_value = curr_pretty_value - (5 * curr_cost)
-                    # curr_value = float(curr_pretty_value) / float(1 + curr_cost)
-                    if best_value is None or best_value < curr_value:
-                        best_value = curr_value
-                        cost = curr_cost
-                        ops = curr_ops
-                        next_idx = curr_idx + len(pretty_melody)
-                        new_str = ''.join([orig_str[:curr_idx], pretty_melody, orig_str[curr_idx + len(pretty_melody):]])
-
-                        next_suggestion_details = best_pretty_overlap[pretty_melody]
-                        if next_suggestion_details is not None:
-                            # reduce next_idx by the amount of string overlap between end of pretty melody and start of next suggestion
-                            next_suggestion = next_suggestion_details['other_melody']
-                            next_idx -= next_suggestion_details['overlap']
-    else:
-        pretty_melody = next_suggestion
-        curr_pretty_value = pretty_values[pretty_melody]
-        if curr_pretty_value > 0:
-            curr_cost, curr_ops = convert_to_pretty(start_idx, curr_idx,
-                                                    orig_str[curr_idx: curr_idx + len(pretty_melody)], pretty_melody)
-
-            if curr_cost >= 0 and curr_cost <= remaining_cost:
+                curr_cost, curr_ops = convert_to_pretty(start_idx, curr_idx, orig_str[curr_idx: curr_idx + len(pretty_melody)],
+                                                        pretty_melody)
                 curr_value = curr_pretty_value - (5 * curr_cost)
-                # curr_value = float(curr_pretty_value) / float(1 + curr_cost)
-                if best_value is None or best_value < curr_value:
-                    best_value = curr_value
-                    cost = curr_cost
-                    ops = curr_ops
-                    next_idx = curr_idx + len(pretty_melody)
-                    new_str = ''.join([orig_str[:curr_idx], pretty_melody, orig_str[curr_idx + len(pretty_melody):]])
 
-                    next_suggestion_details = best_pretty_overlap[pretty_melody]
-                    if next_suggestion_details is not None:
-                        # reduce next_idx by the amount of string overlap between end of pretty melody and start of next suggestion
-                        next_suggestion = next_suggestion_details['other_melody']
-                        next_idx -= next_suggestion_details['overlap']
-
+                if curr_cost >= 0 and curr_cost <= remaining_cost:
+                    if best_value is None or best_value < curr_value:
+                        best_value = curr_value
+                        cost = curr_cost
+                        ops = curr_ops
+                        next_idx = curr_idx + len(pretty_melody)
+                        # new_str = ''.join([orig_str[:curr_idx], pretty_melody, orig_str[curr_idx + len(pretty_melody):]])
+                        break
+    else:
         for pretty_melody in pretty_values:
             curr_pretty_value = pretty_values[pretty_melody]
             if curr_pretty_value > 0:
-                curr_cost, curr_ops = convert_to_pretty(start_idx, curr_idx,
-                                                        orig_str[curr_idx: curr_idx + len(pretty_melody)], pretty_melody)
+                curr_cost, curr_ops = convert_to_pretty(start_idx, curr_idx, orig_str[curr_idx: curr_idx + len(pretty_melody)], pretty_melody)
 
                 if curr_cost >= 0 and curr_cost <= remaining_cost:
                     curr_value = curr_pretty_value - (5 * curr_cost)
@@ -250,15 +167,9 @@ def get_operations(start_idx, orig_str, curr_idx, remaining_cost, n, next_sugges
                         cost = curr_cost
                         ops = curr_ops
                         next_idx = curr_idx + len(pretty_melody)
-                        new_str = ''.join([orig_str[:curr_idx], pretty_melody, orig_str[curr_idx + len(pretty_melody):]])
+                        # new_str = ''.join([orig_str[:curr_idx], pretty_melody, orig_str[curr_idx + len(pretty_melody):]])
 
-                        next_suggestion_details = best_pretty_overlap[pretty_melody]
-                        if next_suggestion_details is not None:
-                            # reduce next_idx by the amount of string overlap between end of pretty melody and start of next suggestion
-                            next_suggestion = next_suggestion_details['other_melody']
-                            next_idx -= next_suggestion_details['overlap']
-
-    return ops, cost, next_idx, new_str, next_suggestion
+    return ops, cost, next_idx, new_str
 
 
 def get_pretty_nonoverlaps(orig_str):
@@ -304,11 +215,10 @@ non_overlaps = get_pretty_nonoverlaps(orig_str)
 curr_nonoverlap_idx = 0
 orig_str = s[non_overlaps[curr_nonoverlap_idx][0]:non_overlaps[curr_nonoverlap_idx][1] + 1]
 third_op_done = False
-next_suggestion = None
 
 while total_cost < x and num_operations < 10**5 and operation_possible:
     remaining_cost = x - total_cost
-    current_operations, curr_cost, curr_idx, new_str, next_suggestion = get_operations(non_overlaps[curr_nonoverlap_idx][0], orig_str, curr_idx, remaining_cost, n, next_suggestion, best_pretty_overlap)
+    current_operations, curr_cost, curr_idx, new_str = get_operations(non_overlaps[curr_nonoverlap_idx][0], orig_str, curr_idx, remaining_cost, n)
 
     if curr_cost is None:
         curr_nonoverlap_idx += 1
